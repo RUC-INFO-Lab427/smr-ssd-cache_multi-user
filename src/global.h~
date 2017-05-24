@@ -20,7 +20,7 @@ unsigned long NSSDCLEAN = 1;
 unsigned long WRITEAMPLIFICATION = 100;
 unsigned long NCOLDBAND = 1;
 unsigned long PERIODTIMES;
-char smr_device[] = "/dev/sdb";
+char smr_device[] = "/dev/sdc";
 char ssd_device[] = "/mnt/ssd/ssd";
 
 SSDEvictionStrategy EvictStrategy;

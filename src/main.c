@@ -61,28 +61,26 @@ main(int argc, char** argv)
     int isWriteOnly;
     int traceID;
     off_t startLBA;
-    if(argc == 5)
+    if(argc == 7)
     {
         NBLOCK_SSD_CACHE = NTABLE_SSD_CACHE = atoi(argv[1]);
         isWriteOnly = atoi(argv[2]);
         traceID = atoi(argv[3]);
         startLBA = atol(argv[4]);
+        MaxSSD = atol(argv[5]);
+	UserId = atoi(argv[6]);
     }
     else
     {
         printf("parameters are wrong %d\n", argc);
         exit(-1);
     }
-
-//        NBLOCK_SSD_CACHE = NTABLE_SSD_CACHE = 50000;
-//        isWriteOnly = 0;
-//        traceID = 1;
-//        startLBA = 0;
 #ifdef SIMULATION
     initFIFOCache();
     inner_ssd_fd = open(inner_ssd_device, O_RDWR | O_DIRECT);
 #endif
     //NBLOCK_SSD_CACHE = NTABLE_SSD_CACHE = 500000;//280M //50000; // 200MB
+
     SSD_BUFFER_SIZE = 4096;
     EvictStrategy = LRU;
 
@@ -90,7 +88,7 @@ main(int argc, char** argv)
     hdd_fd = open(smr_device, O_RDWR | O_DIRECT);
     ssd_fd = open(ssd_device, O_RDWR | O_DIRECT);
 
-    char* tracefile[] = {"/home/trace/src1_2.csv.req","/home/trace/wdev_0.csv.req"};
+    char* tracefile[] = {"/trace/src1_2.csv.req","/trace/wdev_0.csv.req"};
     trace_to_iocall(tracefile[traceID],isWriteOnly,startLBA);
     close(hdd_fd);
     close(ssd_fd);

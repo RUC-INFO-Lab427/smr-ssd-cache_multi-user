@@ -130,4 +130,8 @@ extern const char* SHM_SSDBUF_HASHTABLE;
 extern const char* SHM_SSDBUF_HASHDESPS;
 extern const char* SHM_PROCESS_REQ_LOCK;
 
+extern unsigned long MaxSSD;
+extern unsigned long UsedSSD;
+extern unsigned long UserId;
+
 #endif

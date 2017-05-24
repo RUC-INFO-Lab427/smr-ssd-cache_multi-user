@@ -1,0 +1,2 @@
+./smr-ssd-cache 200000 0 0 0 > /home/800m000_batchid=001_userid=0 &
+./smr-ssd-cache 200000 0 0 2100000 > /home/800m000_batchid=001_userid=1 &

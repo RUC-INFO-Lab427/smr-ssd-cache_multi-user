@@ -38,6 +38,11 @@ static int dev_pread(int fd, void* buf,size_t nbytes,off_t offset);
 static int dev_pwrite(int fd, void* buf,size_t nbytes,off_t offset);
 static char* ssd_buffer;
 
+//for our queue
+unsigned long MaxSSD;
+unsigned long UsedSSD;
+unsigned long UserId;
+
 
 /*
  * init buffer hash table, strategy_control, buffer, work_mem
@@ -59,6 +64,7 @@ initSSD()
         free(ssd_buffer);
         exit(-1);
     }
+    UsedSSD = 0;
 }
 
 static int
@@ -186,13 +192,11 @@ allocSSDBuf(SSDBufferTag *ssd_buf_tag, bool * found, int alloc4What)
     }
     else
     {
-        /** When there is NO free SSD space for cache **/
-        // TODO Choose a buffer by strategy/
+        /** When there is NO free SSD space for cache, TODO flush **/
         long renew_buf = Strategy_GetUnloadBufID(ssd_buf_tag, EvictStrategy); //need look
         ssd_buf_hdr = &ssd_buf_desps[renew_buf];
         _LOCK(&ssd_buf_hdr->lock);
 
-        // TODO Flush
         unsigned char	old_flag = ssd_buf_hdr->ssd_buf_flag;
         if ((old_flag & SSD_BUF_DIRTY) != 0)
         {
@@ -369,13 +373,15 @@ bool isSamebuf(SSDBufferTag *tag1, SSDBufferTag *tag2)
 static SSDBufDesp*
 getAFreeSSDBuf()
 {
-    if(ssd_buf_desp_ctrl->first_freessd < 0)
+    if(ssd_buf_desp_ctrl->first_freessd < 0 || UsedSSD >= MaxSSD)
         return NULL;
 
     SSDBufDesp* ssd_buf_hdr = &ssd_buf_desps[ssd_buf_desp_ctrl->first_freessd];
     ssd_buf_desp_ctrl->first_freessd = ssd_buf_hdr->next_freessd;
     ssd_buf_hdr->next_freessd = -1;
     ssd_buf_desp_ctrl->n_usedssd++;
+    //counting used ssd for this user
+    UsedSSD++;
     return ssd_buf_hdr;
 }
 
