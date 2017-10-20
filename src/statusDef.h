@@ -11,6 +11,6 @@
 #undef  LOG_SINGLE_REQ  // Print detail time information of each single request.
 
 /** Simulator Related **/
-#undef SIMULATION
-#undef SIMULATOR_AIO
+#define SIMULATION
+#define SIMULATOR_AIO
 

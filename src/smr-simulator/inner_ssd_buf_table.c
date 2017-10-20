@@ -6,20 +6,33 @@
 #include "cache.h"
 
 static SSDHashBucket* HashTable;
+static SSDHashBucket* HashItemPool,* FreeItem_hdr;
+static SSDHashBucket* memPop();
+static void memPush(SSDHashBucket* item);
+
 #define GetSSDHashBucket(hash_code) ((SSDHashBucket *) (HashTable + (unsigned long) (hash_code)))
 
 #define IsSame(T1, T2) ((T1.offset == T2.offset) ? 1 : 0)
 
+
+
+
 void initSSDTable(size_t size)
 {
 	HashTable = (SSDHashBucket*)malloc(sizeof(SSDHashBucket)*size);
+	HashItemPool = (SSDHashBucket*)malloc(sizeof(SSDHashBucket)*size);
+	FreeItem_hdr = HashItemPool;
+
 	size_t i;
-	SSDHashBucket *bucket = HashTable;
-	for (i = 0; i < size; bucket++, i++){
-		bucket->despId = -1;
-		bucket->hash_key.offset = -1;
+	SSDHashBucket* bucket = HashTable;
+	SSDHashBucket* freeitem = FreeItem_hdr;
+	for (i = 0; i < size; bucket++, freeitem++, i++){
+		freeitem->despId = bucket->despId = -1;
+		freeitem->hash_key.offset = bucket->hash_key.offset = -1;
 		bucket->next_item = NULL;
+		freeitem->next_item = freeitem + 1;
 	}
+	FreeItem_hdr[size - 1].next_item = NULL;
 }
 
 unsigned long ssdtableHashcode(DespTag tag)
@@ -54,9 +67,8 @@ long ssdtableInsert(DespTag tag, unsigned long hash_code, long despId)
 	while (nowbucket->next_item != NULL) {
 		nowbucket = nowbucket->next_item;
 	}
-    static void* itembuf;
-    int ret = posix_memalign(&itembuf,512,sizeof(SSDHashBucket)); 
-    SSDHashBucket *newitem = (SSDHashBucket*)itembuf;
+
+    SSDHashBucket* newitem = memPop();
     newitem->hash_key = tag;
     newitem->despId = despId;
     newitem->next_item = NULL;
@@ -78,7 +90,7 @@ long ssdtableDelete(DespTag tag, unsigned long hash_code)
             delitem = nowbucket->next_item;
             del_id = delitem->despId;
             nowbucket->next_item = delitem->next_item;
-            free(delitem);
+            memPush(delitem);
             return del_id;
 		}
 		nowbucket = nowbucket->next_item;
@@ -104,12 +116,26 @@ long ssdtableUpdate(DespTag tag, unsigned long hash_code, long despId)
 	}
 
 	// if not exist in table, insert one.
-    static void* itembuf;
-    int ret = posix_memalign(&itembuf,512,sizeof(SSDHashBucket));
-    SSDHashBucket *newitem = (SSDHashBucket*)itembuf;
+
+    SSDHashBucket* newitem = memPop();
     newitem->hash_key = tag;
     newitem->despId = despId;
     newitem->next_item = NULL;
     lastbucket->next_item = newitem;
 	return -1;
+}
+
+static SSDHashBucket* memPop(){
+	if(FreeItem_hdr == NULL)
+	{
+		printf("SIMU: fifo hashtale poll overflow!\n");
+		exit(-1);
+	}
+	SSDHashBucket* item = FreeItem_hdr;
+	FreeItem_hdr = FreeItem_hdr->next_item;
+	return item;
+}
+static void memPush(SSDHashBucket* item){
+	item->next_item = FreeItem_hdr;
+	FreeItem_hdr = item;
 }
